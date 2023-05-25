@@ -5,9 +5,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.ar.core.ArCoreApk;
@@ -35,27 +37,19 @@ import java.util.Collection;
 public class MainActivity extends AppCompatActivity {
     private String TAG ="hank";
     private Session session;
+    private Button btnCamera;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initView();
+    }
 
-
-        ArCoreApk.Availability availability =  ArCoreApk.getInstance().checkAvailability(this);
-        try {
-//            checkCameraPermission();
-//            checkCameraPermissions();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        Log.v(TAG,"availability -> :"+ availability);
-
-//        try {
-//            testARCore();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            Log.v(TAG,"testARCore- > e:" + e.toString());
-//        }
+    private void initView() {
+        btnCamera = findViewById(R.id.btnCamera);
+        btnCamera.setOnClickListener(v ->{
+            startActivity(new Intent(MainActivity.this, SharedCameraActivity.class));
+        });
     }
 
 
@@ -103,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.v(TAG,"checkDeviceSupportAr() SUPPORTED_APK_TOO_OLD");
 
                 try {
+                    //引導安裝
                     ArCoreApk.InstallStatus installStatus = ArCoreApk.getInstance().requestInstall(this, true);
                     if(installStatus == ArCoreApk.InstallStatus.INSTALL_REQUESTED){
                         msg = "重新引導安裝apk";
@@ -128,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
         if(mUserRequestedInstall){
 //            testARCore();
             createSession();
+            setDeptMode();
         }else {
             //不支援AR
         }
@@ -163,6 +159,22 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, "Error retrieving supported camera configs: " + e.getMessage());
         }
+    }
+
+    //5.判斷裝置是否支援深度模式,並且設定深度模式
+    private void setDeptMode() {
+        Config config = session.getConfig();
+        boolean isDepthModeSupported = session.isDepthModeSupported(Config.DepthMode.AUTOMATIC);
+        if(isDepthModeSupported){
+            config.setDepthMode(Config.DepthMode.AUTOMATIC);
+            Toast.makeText(this,"setDeptMode() isDepthModeSupported:",Toast.LENGTH_SHORT).show();
+            Log.v(TAG,"setDeptMode() isDepthModeSupported:" + isDepthModeSupported);
+        }else {
+            Toast.makeText(this,"createSession Success",Toast.LENGTH_SHORT).show();
+            Log.v(TAG,"setDeptMode() isDepthModeSupported:" + isDepthModeSupported);
+        }
+
+        session.configure(config);
     }
 
     //2.當使用者操作是否同意相機權限時
